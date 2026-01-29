@@ -1,4 +1,5 @@
-const { JsonWebTokenError } = require("jsonwebtoken");
+// const { JsonWebTokenError } = require("jsonwebtoken");
+const JsonWebTokenError = require("../classes/errors/JsonWebTokenError");
 const constants = require("../configs/constants");
 const isProduction = require("../utils/isProduction");
 
@@ -7,7 +8,7 @@ const { errorCodes } = constants;
 function errorHandle(error, req, res, next) {
     if (error instanceof JsonWebTokenError) {
         return res.status(401).json({
-            message: "Unauthorized.",
+            message: error.message || "Unauthorized.",
         });
     }
 
