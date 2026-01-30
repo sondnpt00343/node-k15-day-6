@@ -3,6 +3,8 @@ const crypto = require("node:crypto");
 const authConfig = require("../configs/auth.config");
 const base64 = require("../utils/base64");
 const JsonWebTokenError = require("../classes/errors/JsonWebTokenError");
+const randomString = require("../utils/randomString");
+const db = require("../../db");
 
 const jwt = {
     sign(payload, secret) {
@@ -59,7 +61,7 @@ class AuthService {
         const accessToken = await jwt.sign(
             {
                 sub: user.id,
-                exp: Date.now() / 1000 + ttl,
+                exp: parseInt(Date.now() / 1000 + ttl),
             },
             authConfig.jwtSecret,
         );
@@ -69,6 +71,30 @@ class AuthService {
     async verifyAccessToken(accessToken) {
         const payload = await jwt.verify(accessToken, authConfig.jwtSecret);
         return payload;
+    }
+
+    async createRefreshToken(user, userAgent) {
+        let refreshToken,
+            isExists = false;
+
+        do {
+            refreshToken = randomString();
+            const [[{ count }]] = await db.query(
+                "select count(*) as count from refresh_tokens where token = ?",
+                [refreshToken],
+            );
+            isExists = count > 0;
+        } while (isExists);
+
+        const expiresDate = new Date();
+        expiresDate.setDate(expiresDate.getDate() + authConfig.refreshTokenTTL);
+
+        await db.query(
+            "insert into refresh_tokens (user_id, token, user_agent, expires_at) values (?, ?, ?, ?)",
+            [user.id, refreshToken, userAgent, expiresDate],
+        );
+
+        return refreshToken;
     }
 }
 

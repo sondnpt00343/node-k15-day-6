@@ -3,10 +3,16 @@ const authService = require("../services/authService");
 
 async function authRequired(req, res, next) {
     const accessToken = req.headers?.authorization?.slice(6)?.trim();
-    
+
     const payload = await authService.verifyAccessToken(accessToken);
 
-    if (payload.exp < Date.now() / 1000) {
+    // Check blacklist
+    const [[{ count }]] = await db.query(
+        `select count(*) as count from revoked_tokens where token = ?`,
+        [accessToken],
+    );
+
+    if (count > 0 || payload.exp < Date.now() / 1000) {
         return res.status(401).json({
             message: "Unauthorized.",
         });
@@ -17,7 +23,7 @@ async function authRequired(req, res, next) {
         [payload.sub],
     );
     const user = users[0];
-    
+
     if (!user) {
         return res.status(401).json({
             message: "Unauthorized.",
@@ -25,6 +31,8 @@ async function authRequired(req, res, next) {
     }
 
     req.currentUser = user;
+    req.accessToken = accessToken;
+    req.tokenPayload = payload;
 
     next();
 }
