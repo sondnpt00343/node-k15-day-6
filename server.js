@@ -68,8 +68,11 @@ app.post("/auth/register", async (req, res) => {
 });
 
 app.get("/auth/me", authRequired, async (req, res) => {
+    const user = { ...req.auth.user };
+    delete user.password;
+
     res.json({
-        data: req.currentUser,
+        data: user,
     });
 });
 
@@ -117,7 +120,7 @@ app.post("/auth/login", async (req, res) => {
 });
 
 app.post("/auth/logout", authRequired, async (req, res) => {
-    const { accessToken, tokenPayload } = req;
+    const { accessToken, tokenPayload } = req.auth;
     const query = `insert into revoked_tokens (token, expires_at) values (?, ?)`;
     await db.query(query, [accessToken, new Date(tokenPayload.exp * 1000)]);
 
@@ -176,6 +179,24 @@ app.post("/auth/verify-email", async (req, res) => {
 
     res.json({
         message: "Verified.",
+    });
+});
+
+app.post("/auth/change-password", authRequired, async (req, res) => {
+    const { password, new_password } = req.body;
+
+    const [error] = await authService.changePassword(
+        req.auth.user,
+        password,
+        new_password,
+    );
+    if (error) {
+        return res.status(httpCodes.unprocessableEntity).json({
+            message: error,
+        });
+    }
+    res.json({
+        message: "Doi mat khau thanh cong.",
     });
 });
 

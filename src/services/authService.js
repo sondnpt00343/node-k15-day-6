@@ -1,4 +1,6 @@
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
 const authConfig = require("../configs/auth.config");
 const randomString = require("../utils/randomString");
 const appConfig = require("../configs/app.config");
@@ -79,6 +81,28 @@ class AuthService {
         );
 
         return [false, null];
+    }
+
+    async changePassword(user, password, newPassword) {
+        // Check mat khau giong nhau
+        if (password === newPassword) {
+            return ["Mat khau moi phai khac mat khau hien tai.", null];
+        }
+
+        // Check mat khau chinh xac
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) {
+            return ["Mat khau hien tai khong dung", null];
+        }
+
+        const hash = await bcrypt.hash(newPassword, authConfig.saltRounds);
+
+        await db.query("update users set password = ? where id = ?", [
+            hash,
+            user.id,
+        ]);
+
+        return [false];
     }
 }
 

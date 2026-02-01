@@ -6,6 +6,7 @@ const constants = {
         forbidden: 403,
         notFound: 404,
         conflict: 409,
+        unprocessableEntity: 422,
     },
     errorCodes: {
         conflict: "ER_DUP_ENTRY",
