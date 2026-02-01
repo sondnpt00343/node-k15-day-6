@@ -10,6 +10,12 @@ const constants = {
     errorCodes: {
         conflict: "ER_DUP_ENTRY",
     },
+    jobStatus: {
+        pending: "pending",
+        inprogress: "inprogress",
+        completed: "completed",
+        failed: "failed",
+    },
 };
 
 module.exports = constants;

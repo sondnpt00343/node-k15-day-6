@@ -10,7 +10,7 @@ const authService = require("./src/services/authService");
 const authRequired = require("./src/middlewares/authRequired");
 const authConfig = require("./src/configs/auth.config");
 const constants = require("./src/configs/constants");
-const mailService = require("./src/services/mailService");
+const queueService = require("./src/services/queueService");
 
 const app = express();
 const port = 3000;
@@ -60,8 +60,7 @@ app.post("/auth/register", async (req, res) => {
         email,
     };
 
-    // Send email
-    await mailService.sendVerificationEmail(newUser);
+    await queueService.push("sendVerificationEmail", newUser);
 
     res.json({
         data: newUser,

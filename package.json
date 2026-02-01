@@ -1,16 +1,17 @@
 {
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.2.3",
-    "ejs": "^4.0.1",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.16.1",
-    "nodemailer": "^7.0.13"
-  }
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js",
+        "queue": "node --watch queue.js"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "cors": "^2.8.6",
+        "dotenv": "^17.2.3",
+        "ejs": "^4.0.1",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "mysql2": "^3.16.1",
+        "nodemailer": "^7.0.13"
+    }
 }
