@@ -26,6 +26,7 @@ class MailService {
         return result;
     }
 
+    // Send verification email
     async sendVerificationEmail(user) {
         const { fromAddress, fromName } = mailConfig;
         const verificationLink = authService.generateVerificationLink(user);
@@ -37,6 +38,24 @@ class MailService {
             template: "auth/verificationEmail",
             templateData: {
                 verificationLink,
+            },
+        });
+
+        return result;
+    }
+
+    // Send password change email
+    async sendChangePasswordEmail(user) {
+        const { fromAddress, fromName } = mailConfig;
+
+        const result = await this.send({
+            from: `"${fromName}" <${fromAddress}>`,
+            to: user.email,
+            subject: "Thông báo đổi mật khẩu",
+            template: "auth/changePassword",
+            templateData: {
+                changeTime: new Date().toLocaleString(),
+                supportLink: "https://f8.edu.vn/ho-tro",
             },
         });
 

@@ -5,6 +5,8 @@ const authConfig = require("../configs/auth.config");
 const randomString = require("../utils/randomString");
 const appConfig = require("../configs/app.config");
 const db = require("../../db");
+const mailService = require("./mailService");
+const queueService = require("./queueService");
 
 class AuthService {
     async signAccessToken(user) {
@@ -101,6 +103,12 @@ class AuthService {
             hash,
             user.id,
         ]);
+
+        // Send email
+        await queueService.push("sendChangePasswordEmail", {
+            id: user.id,
+            email: user.email,
+        });
 
         return [false];
     }
