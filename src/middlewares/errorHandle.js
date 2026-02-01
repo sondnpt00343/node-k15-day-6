@@ -1,5 +1,4 @@
-// const { JsonWebTokenError } = require("jsonwebtoken");
-const JsonWebTokenError = require("../classes/errors/JsonWebTokenError");
+const { JsonWebTokenError } = require("jsonwebtoken");
 const constants = require("../configs/constants");
 const isProduction = require("../utils/isProduction");
 

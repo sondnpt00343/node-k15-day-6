@@ -1,58 +1,8 @@
-// const jwt = require("jsonwebtoken");
-const crypto = require("node:crypto");
+const jwt = require("jsonwebtoken");
 const authConfig = require("../configs/auth.config");
-const base64 = require("../utils/base64");
-const JsonWebTokenError = require("../classes/errors/JsonWebTokenError");
 const randomString = require("../utils/randomString");
+const appConfig = require("../configs/app.config");
 const db = require("../../db");
-
-const jwt = {
-    sign(payload, secret) {
-        // Header
-        const jsonHeader = JSON.stringify({
-            typ: "JWT",
-            alg: "HS256",
-        });
-        const encodedHeader = base64.encode(jsonHeader, true);
-
-        // Payload
-        const jsonPayload = JSON.stringify(payload);
-        const encodedPayload = base64.encode(jsonPayload, true);
-
-        // Signature
-        const hmac = crypto.createHmac("sha256", secret);
-        hmac.update(`${encodedHeader}.${encodedPayload}`);
-        const signature = hmac.digest("base64url");
-
-        // JWT token
-        const token = `${encodedHeader}.${encodedPayload}.${signature}`;
-
-        return token;
-    },
-    verify(token, secret) {
-        const tokens = token?.split(".");
-
-        if (!tokens) throw new JsonWebTokenError("Khong co token");
-
-        const encodedHeader = tokens[0];
-        const encodedPayload = tokens[1];
-        const oldSignature = tokens[2];
-
-        // Signature
-        const hmac = crypto.createHmac("sha256", secret);
-        hmac.update(`${encodedHeader}.${encodedPayload}`);
-        const newSignature = hmac.digest("base64url");
-
-        const isValid = newSignature === oldSignature;
-
-        if (isValid) {
-            const payload = JSON.parse(base64.decode(encodedPayload, true));
-            return payload;
-        }
-
-        throw new JsonWebTokenError("Invalid token.");
-    },
-};
 
 class AuthService {
     async signAccessToken(user) {
@@ -95,6 +45,40 @@ class AuthService {
         );
 
         return refreshToken;
+    }
+
+    generateVerificationLink(user) {
+        const payload = {
+            sub: user.id,
+            exp: Date.now() / 1000 + authConfig.verificationTokenTTL,
+        };
+        const token = jwt.sign(payload, authConfig.verificationJwtSecret);
+        const verificationLink = `${appConfig.url}/verify-email?token=${token}`;
+        return verificationLink;
+    }
+
+    async verifyEmail(token) {
+        const payload = jwt.verify(token, authConfig.verificationJwtSecret);
+
+        if (payload.exp < Date.now() / 1000) {
+            return [true, null];
+        }
+
+        const userId = payload.sub;
+
+        const query = `select count(*) as count from users where id = ? and email_verified_at is not null;`;
+        const [[{ count }]] = await db.query(query, [userId]);
+
+        if (count > 0) {
+            return [true, null];
+        }
+
+        await db.query(
+            "update users set email_verified_at = now() where id = ?",
+            [userId],
+        );
+
+        return [false, null];
     }
 }
 

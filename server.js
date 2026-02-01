@@ -1,21 +1,27 @@
 require("dotenv").config();
 
+const cors = require("cors");
 const express = require("express");
 const bcrypt = require("bcrypt");
 
-const errorHandle = require("./src/middlewares/errorHandle");
 const db = require("./db");
+const errorHandle = require("./src/middlewares/errorHandle");
 const authService = require("./src/services/authService");
 const authRequired = require("./src/middlewares/authRequired");
 const authConfig = require("./src/configs/auth.config");
 const constants = require("./src/configs/constants");
+const mailService = require("./src/services/mailService");
+
 const app = express();
 const port = 3000;
 
 const { httpCodes } = constants;
 
+// Apply middleware
+app.use(cors());
 app.use(express.json());
 
+// Router
 app.get("/posts", authRequired, async (req, res) => {
     const [posts] = await db.query(`select * from posts`);
     res.json(posts);
@@ -54,6 +60,9 @@ app.post("/auth/register", async (req, res) => {
         email,
     };
 
+    // Send email
+    await mailService.sendVerificationEmail(newUser);
+
     res.json({
         data: newUser,
     });
@@ -69,7 +78,7 @@ app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
 
     const [users] = await db.query(
-        `select id, password from users where email = ?`,
+        `select id, password, email_verified_at from users where email = ?`,
         [email],
     );
     const user = users[0];
@@ -83,6 +92,12 @@ app.post("/auth/login", async (req, res) => {
     const isValid = await bcrypt.compare(password, user.password);
 
     if (isValid) {
+        if (!user.email_verified_at) {
+            return res.status(httpCodes.forbidden).json({
+                message: "Vui long xac thuc tai khoan",
+            });
+        }
+
         const accessToken = await authService.signAccessToken(user);
         const refreshToken = await authService.createRefreshToken(
             user,
@@ -147,6 +162,21 @@ app.post("/auth/refresh-token", async (req, res) => {
             access_token: accessToken,
             refresh_token: refreshToken,
         },
+    });
+});
+
+app.post("/auth/verify-email", async (req, res) => {
+    const { token } = req.body;
+    const [error, data] = await authService.verifyEmail(token);
+
+    if (error) {
+        return res.status(403).json({
+            message: "Invalid token.",
+        });
+    }
+
+    res.json({
+        message: "Verified.",
     });
 });
 
