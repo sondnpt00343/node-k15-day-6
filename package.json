@@ -1,17 +1,23 @@
 {
     "scripts": {
         "start": "node server.js",
-        "dev": "node --watch server.js",
-        "queue": "node --watch queue.js"
+        "dev": "concurrently 'npm:dev-server' 'npm:queue' 'npm:schedule'",
+        "dev-server": "node --watch server.js",
+        "queue": "node --watch queue.js",
+        "schedule": "node --watch schedule.js"
     },
     "dependencies": {
         "bcrypt": "^6.0.0",
         "cors": "^2.8.6",
+        "cron": "^4.4.0",
         "dotenv": "^17.2.3",
         "ejs": "^4.0.1",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",
         "mysql2": "^3.16.1",
         "nodemailer": "^7.0.13"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1"
     }
 }

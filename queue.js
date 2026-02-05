@@ -33,7 +33,10 @@ const { jobStatus } = require("./src/configs/constants");
             } catch (error) {
                 // Update status: "failed"
                 console.log(`Job "${type}" failed.`);
-                queueService.updateStatus(id, jobStatus.failed);
+                const info = JSON.stringify({
+                    message: String(error),
+                });
+                queueService.updateStatus(id, jobStatus.failed, info);
             }
         }
 
