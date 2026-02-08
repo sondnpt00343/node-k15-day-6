@@ -11,6 +11,9 @@ const constants = {
     errorCodes: {
         conflict: "ER_DUP_ENTRY",
     },
+    prismaCodes: {
+        notFound: "P2025",
+    },
     jobStatus: {
         pending: "pending",
         inprogress: "inprogress",

@@ -11,6 +11,10 @@ const authRequired = require("./src/middlewares/authRequired");
 const authConfig = require("./src/configs/auth.config");
 const constants = require("./src/configs/constants");
 const queueService = require("./src/services/queueService");
+const prisma = require("./src/libs/prisma");
+
+// Controller
+const userController = require("./src/controllers/user.controller");
 
 const app = express();
 const port = 3000;
@@ -22,8 +26,21 @@ app.use(cors());
 app.use(express.json());
 
 // Router
-app.get("/posts", authRequired, async (req, res) => {
-    const [posts] = await db.query(`select * from posts`);
+app.get("/posts", async (req, res) => {
+    const posts = await prisma.posts.findMany({
+        select: {
+            id: true,
+            title: true,
+            created_at: true,
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                },
+            },
+        },
+    });
     res.json(posts);
 });
 
@@ -74,6 +91,22 @@ app.get("/auth/me", authRequired, async (req, res) => {
     res.json({
         data: user,
     });
+});
+
+app.get("/users", userController.getAll);
+
+app.get("/users/:id", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    const user = await prisma.users.findUniqueOrThrow({
+        where: {
+            id: userId,
+        },
+        include: {
+            posts: true,
+        },
+    });
+
+    res.json(user);
 });
 
 app.post("/auth/login", async (req, res) => {
