@@ -15,6 +15,7 @@ const prisma = require("./src/libs/prisma");
 
 // Controller
 const userController = require("./src/controllers/user.controller");
+const postController = require("./src/controllers/post.controller");
 
 const app = express();
 const port = 3000;
@@ -26,38 +27,8 @@ app.use(cors());
 app.use(express.json());
 
 // Router
-app.get("/posts", async (req, res) => {
-    const posts = await prisma.posts.findMany({
-        select: {
-            id: true,
-            title: true,
-            created_at: true,
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
-            },
-        },
-    });
-    res.json(posts);
-});
-
-app.get("/posts/:id", async (req, res) => {
-    const [posts] = await db.query(
-        `select * from posts where id = ${req.params.id};`,
-    );
-    const post = posts[0];
-
-    if (!post) {
-        return res.status(httpCodes.notFound).json({
-            message: "Resource not found.",
-        });
-    }
-
-    res.json(post);
-});
+app.get("/posts", postController.getAll);
+app.get("/posts/:id", postController.getDetail);
 
 app.post("/auth/register", async (req, res) => {
     const email = req.body.email;
