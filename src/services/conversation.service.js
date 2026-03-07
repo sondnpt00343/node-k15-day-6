@@ -3,6 +3,31 @@ const pusher = require("@/libs/pusher");
 
 class ConversationService {
     async create(name, type, userIds) {
+        if (type === "dm") {
+            const existing = await prisma.conversation.findFirst({
+                where: {
+                    type: "dm",
+                    AND: userIds.map((userId) => ({
+                        conversationUsers: {
+                            some: { user_id: userId },
+                        },
+                    })),
+                    conversationUsers: {
+                        every: {
+                            user_id: { in: userIds },
+                        },
+                    },
+                },
+                include: {
+                    conversationUsers: true,
+                },
+            });
+
+            if (existing && existing.conversationUsers.length === userIds.length) {
+                return existing;
+            }
+        }
+
         const conversation = await prisma.conversation.create({
             data: {
                 name: name || null,
