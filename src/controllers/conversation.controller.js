@@ -1,6 +1,17 @@
 const conversationService = require("@/services/conversation.service");
 const { http } = require("@/configs/constants");
 
+const findDm = async (req, res) => {
+    const otherUserId = parseInt(req.params.userId);
+    const conversation = await conversationService.findDm(req.auth.user.id, otherUserId);
+
+    if (!conversation) {
+        return res.error("NOT_FOUND", http.notFound);
+    }
+
+    res.success(conversation);
+};
+
 const getAll = async (req, res) => {
     const conversations = await conversationService.getConversations(req.auth.user.id);
     res.success(conversations);
@@ -40,6 +51,7 @@ const createMessage = async (req, res) => {
 };
 
 module.exports = {
+    findDm,
     getAll,
     create,
     getMessages,

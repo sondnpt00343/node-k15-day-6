@@ -23,7 +23,10 @@ class ConversationService {
                 },
             });
 
-            if (existing && existing.conversationUsers.length === userIds.length) {
+            if (
+                existing &&
+                existing.conversationUsers.length === userIds.length
+            ) {
                 return existing;
             }
         }
@@ -44,7 +47,51 @@ class ConversationService {
             });
         }
 
+        // Fetch đầy đủ để gửi qua websocket (format giống getConversations)
+        const fullConversation = await prisma.conversation.findUnique({
+            where: { id: conversation.id },
+            include: {
+                messages: {
+                    orderBy: { created_at: "desc" },
+                    take: 1,
+                },
+                conversationUsers: {
+                    include: {
+                        user: {
+                            select: { id: true, email: true, name: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        // Thông báo cho tất cả thành viên về conversation mới
+        for (const userId of userIds) {
+            pusher.trigger(`user-${userId}`, "conversation.created", fullConversation);
+        }
+
         return conversation;
+    }
+
+    async findDm(userId, otherUserId) {
+        const userIds = [userId, otherUserId];
+        const existing = await prisma.conversation.findFirst({
+            where: {
+                type: "dm",
+                AND: userIds.map((uid) => ({
+                    conversationUsers: { some: { user_id: uid } },
+                })),
+                conversationUsers: {
+                    every: { user_id: { in: userIds } },
+                },
+            },
+            include: { conversationUsers: true },
+        });
+
+        if (existing && existing.conversationUsers.length === userIds.length) {
+            return existing;
+        }
+        return null;
     }
 
     async getConversations(userId) {
