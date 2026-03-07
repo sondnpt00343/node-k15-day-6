@@ -1,6 +1,11 @@
 const conversationService = require("@/services/conversation.service");
 const { http } = require("@/configs/constants");
 
+const getAll = async (req, res) => {
+    const conversations = await conversationService.getConversations(req.auth.user.id);
+    res.success(conversations);
+};
+
 const create = async (req, res) => {
     const { name, type, user_ids } = req.body;
     const userIds = [req.auth.user.id, ...(user_ids || [])];
@@ -32,6 +37,7 @@ const createMessage = async (req, res) => {
 };
 
 module.exports = {
+    getAll,
     create,
     getMessages,
     createMessage,

@@ -47,6 +47,38 @@ class ConversationService {
         return conversation;
     }
 
+    async getConversations(userId) {
+        const conversations = await prisma.conversation.findMany({
+            where: {
+                conversationUsers: {
+                    some: { user_id: userId },
+                },
+            },
+            include: {
+                messages: {
+                    orderBy: { created_at: "desc" },
+                    take: 1,
+                },
+                conversationUsers: {
+                    where: {
+                        user_id: { not: userId },
+                    },
+                    include: {
+                        user: {
+                            select: { id: true, email: true, name: true },
+                        },
+                    },
+                },
+            },
+        });
+
+        return conversations.sort((a, b) => {
+            const aTime = a.messages[0]?.created_at ?? new Date(0);
+            const bTime = b.messages[0]?.created_at ?? new Date(0);
+            return bTime - aTime;
+        });
+    }
+
     async getMessages(conversationId) {
         return prisma.message.findMany({
             where: {

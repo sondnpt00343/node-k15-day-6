@@ -4,6 +4,7 @@ const conversationController = require("@/controllers/conversation.controller");
 const authRequired = require("@/middlewares/authRequired");
 const conversationMember = require("@/middlewares/conversationMember");
 
+router.get("/", authRequired, conversationController.getAll);
 router.post("/", authRequired, conversationController.create);
 router.get("/:id/messages", authRequired, conversationMember, conversationController.getMessages);
 router.post("/:id/messages", authRequired, conversationMember, conversationController.createMessage);
