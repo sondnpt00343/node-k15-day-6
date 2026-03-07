@@ -17,9 +17,12 @@ const create = async (req, res) => {
 
 const getMessages = async (req, res) => {
     const id = parseInt(req.params.id);
-    const messages = await conversationService.getMessages(id);
+    const limit = req.query.limit ? parseInt(req.query.limit) : 20;
+    const before = req.query.before ? parseInt(req.query.before) : undefined;
 
-    res.success(messages);
+    const result = await conversationService.getMessages(id, { limit, before });
+
+    res.success(result);
 };
 
 const createMessage = async (req, res) => {
