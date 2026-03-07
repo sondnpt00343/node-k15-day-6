@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const conversationController = require("@/controllers/conversation.controller");
 const authRequired = require("@/middlewares/authRequired");
+const conversationMember = require("@/middlewares/conversationMember");
 
 router.post("/", authRequired, conversationController.create);
-router.get("/:id/messages", authRequired, conversationController.getMessages);
-router.post("/:id/messages", authRequired, conversationController.createMessage);
+router.get("/:id/messages", authRequired, conversationMember, conversationController.getMessages);
+router.post("/:id/messages", authRequired, conversationMember, conversationController.createMessage);
 
 module.exports = router;
