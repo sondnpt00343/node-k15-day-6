@@ -27,6 +27,18 @@ class ConversationService {
             where: {
                 conversation_id: conversationId,
             },
+            orderBy: {
+                created_at: "asc",
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                    },
+                },
+            },
         });
     }
 
