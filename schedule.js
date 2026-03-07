@@ -1,8 +1,9 @@
+require("module-alias/register");
 require("dotenv").config();
 const { CronJob } = require("cron");
 
-const backupDB = require("./src/schedulers/backupDB");
-const autoDeleteRevokedTokens = require("./src/schedulers/autoDeleteRevokedTokens");
+const backupDB = require("@/schedulers/backupDB");
+const autoDeleteRevokedTokens = require("@/schedulers/autoDeleteRevokedTokens");
 
 // Backup DB 02:00
 new CronJob("0 2 * * *", backupDB).start();

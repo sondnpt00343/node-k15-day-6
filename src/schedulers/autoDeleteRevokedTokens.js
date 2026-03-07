@@ -1,10 +1,12 @@
-const db = require("../../db");
+const prisma = require("@/libs/prisma");
 
 async function autoDeleteRevokedTokens() {
-    const [{ affectedRows }] = await db.query(
-        "delete from revoked_tokens where expires_at < now()",
-    );
-    console.log(`Da xoa ${affectedRows} token het han.`);
+    const result = await prisma.revokedToken.deleteMany({
+        where: {
+            expires_at: { lt: new Date() },
+        },
+    });
+    console.log(`Da xoa ${result.count} token het han.`);
 }
 
 module.exports = autoDeleteRevokedTokens;

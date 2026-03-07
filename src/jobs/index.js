@@ -6,7 +6,7 @@ const jobs = readdirSync(__dirname)
         const type = fileName.replace(".js", "");
         return {
             ...obj,
-            [type]: require(`./${fileName}`),
+            [type]: require(`@/jobs/${fileName}`),
         };
     }, {});
 

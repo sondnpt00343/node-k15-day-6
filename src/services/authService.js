@@ -1,11 +1,12 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const authConfig = require("../configs/auth.config");
-const randomString = require("../utils/randomString");
-const appConfig = require("../configs/app.config");
-const db = require("../../db");
-const queueService = require("./queueService");
+const authConfig = require("@/configs/auth.config");
+const { authError } = require("@/configs/constants");
+const randomString = require("@/utils/randomString");
+const appConfig = require("@/configs/app.config");
+const prisma = require("@/libs/prisma");
+const queueService = require("@/services/queueService");
 
 class AuthService {
     async signAccessToken(user) {
@@ -27,25 +28,28 @@ class AuthService {
     }
 
     async createRefreshToken(user, userAgent) {
-        let refreshToken,
-            isExists = false;
+        let refreshToken;
+        let exists = true;
 
-        do {
+        while (exists) {
             refreshToken = randomString();
-            const [[{ count }]] = await db.query(
-                "select count(*) as count from refresh_tokens where token = ?",
-                [refreshToken],
-            );
-            isExists = count > 0;
-        } while (isExists);
+            const count = await prisma.refreshToken.count({
+                where: { token: refreshToken },
+            });
+            exists = count > 0;
+        }
 
         const expiresDate = new Date();
         expiresDate.setDate(expiresDate.getDate() + authConfig.refreshTokenTTL);
 
-        await db.query(
-            "insert into refresh_tokens (user_id, token, user_agent, expires_at) values (?, ?, ?, ?)",
-            [user.id, refreshToken, userAgent, expiresDate],
-        );
+        await prisma.refreshToken.create({
+            data: {
+                user_id: user.id,
+                token: refreshToken,
+                user_agent: userAgent,
+                expires_at: expiresDate,
+            },
+        });
 
         return refreshToken;
     }
@@ -61,55 +65,168 @@ class AuthService {
     }
 
     async verifyEmail(token) {
-        const payload = jwt.verify(token, authConfig.verificationJwtSecret);
+        try {
+            const payload = jwt.verify(token, authConfig.verificationJwtSecret);
 
-        if (payload.exp < Date.now() / 1000) {
+            if (payload.exp < Date.now() / 1000) {
+                return [null, authError.invalidToken];
+            }
+
+            const user = await prisma.user.findUnique({
+                where: { id: payload.sub },
+                select: { id: true, email_verified_at: true },
+            });
+
+            if (!user) {
+                return [null, authError.invalidToken];
+            }
+
+            if (user.email_verified_at) {
+                return [null, authError.emailAlreadyVerified];
+            }
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { email_verified_at: new Date() },
+            });
+
             return [true, null];
+        } catch {
+            return [null, authError.invalidToken];
+        }
+    }
+
+    async register(email, password) {
+        const hash = await bcrypt.hash(password, authConfig.saltRounds);
+        const user = await prisma.user.create({
+            data: { email, password: hash },
+            select: { id: true, email: true },
+        });
+        return user;
+    }
+
+    async login(email, password, userAgent) {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+                id: true,
+                password: true,
+                email_verified_at: true,
+            },
+        });
+
+        if (!user) {
+            return [null, authError.notFound];
         }
 
-        const userId = payload.sub;
-
-        const query = `select count(*) as count from users where id = ? and email_verified_at is not null;`;
-        const [[{ count }]] = await db.query(query, [userId]);
-
-        if (count > 0) {
-            return [true, null];
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) {
+            return [null, authError.unauthorized];
         }
 
-        await db.query(
-            "update users set email_verified_at = now() where id = ?",
-            [userId],
-        );
+        if (!user.email_verified_at) {
+            return [null, authError.emailNotVerified];
+        }
 
-        return [false, null];
+        const accessToken = await this.signAccessToken(user);
+        const refreshToken = await this.createRefreshToken(user, userAgent);
+
+        return [
+            { access_token: accessToken, refresh_token: refreshToken },
+            null,
+        ];
+    }
+
+    async logout(accessToken, tokenPayload) {
+        await prisma.revokedToken.create({
+            data: {
+                token: accessToken,
+                expires_at: new Date(tokenPayload.exp * 1000),
+            },
+        });
+    }
+
+    async refreshToken(refreshToken, userAgent) {
+        const refreshTokenDB = await prisma.refreshToken.findFirst({
+            where: {
+                token: refreshToken,
+                expires_at: { gte: new Date() },
+                is_revoked: { not: "1" },
+            },
+            select: { id: true, user_id: true },
+        });
+
+        if (!refreshTokenDB) {
+            return [null, authError.unauthorized];
+        }
+
+        const user = { id: refreshTokenDB.user_id };
+        const accessToken = await this.signAccessToken(user);
+        const newRefreshToken = await this.createRefreshToken(user, userAgent);
+
+        await prisma.refreshToken.update({
+            where: { id: refreshTokenDB.id },
+            data: { is_revoked: "1" },
+        });
+
+        return [
+            { access_token: accessToken, refresh_token: newRefreshToken },
+            null,
+        ];
+    }
+
+    getMe(user) {
+        const result = { ...user };
+        delete result.password;
+        return result;
+    }
+
+    async resendVerificationEmail(email, password) {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, password: true, email_verified_at: true },
+        });
+
+        if (!user) {
+            return [null, authError.notFound];
+        }
+
+        if (user.email_verified_at) {
+            return [null, authError.emailAlreadyVerified];
+        }
+
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) {
+            return [null, authError.unauthorized];
+        }
+
+        await queueService.push("sendVerificationEmail", user);
+        return [true, null];
     }
 
     async changePassword(user, password, newPassword) {
-        // Check mat khau giong nhau
         if (password === newPassword) {
-            return ["Mat khau moi phai khac mat khau hien tai.", null];
+            return [null, authError.passwordSame];
         }
 
-        // Check mat khau chinh xac
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
-            return ["Mat khau hien tai khong dung", null];
+            return [null, authError.passwordWrong];
         }
 
         const hash = await bcrypt.hash(newPassword, authConfig.saltRounds);
 
-        await db.query("update users set password = ? where id = ?", [
-            hash,
-            user.id,
-        ]);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hash },
+        });
 
-        // Send email
         await queueService.push("sendChangePasswordEmail", {
             id: user.id,
             email: user.email,
         });
 
-        return [false];
+        return [true, null];
     }
 }
 

@@ -1,4 +1,4 @@
-const mailService = require("../services/mailService");
+const mailService = require("@/services/mailService");
 
 async function sendVerificationEmail(payload) {
     await mailService.sendVerificationEmail(payload);

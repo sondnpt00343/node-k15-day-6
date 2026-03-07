@@ -1,9 +1,9 @@
 const ejs = require("ejs");
 const path = require("node:path");
 
-const mailConfig = require("../configs/mail.config");
-const { transporter } = require("../libs/nodemailer");
-const authService = require("./authService");
+const mailConfig = require("@/configs/mail.config");
+const { transporter } = require("@/libs/nodemailer");
+const authService = require("@/services/authService");
 
 class MailService {
     getTemplatePath(template) {
@@ -26,13 +26,12 @@ class MailService {
         return result;
     }
 
-    // Send verification email
     async sendVerificationEmail(user) {
-        const { fromAddress, fromName } = mailConfig;
+        const { appUser, fromName } = mailConfig;
         const verificationLink = authService.generateVerificationLink(user);
 
         const result = await this.send({
-            from: `"${fromName}" <${fromAddress}>`,
+            from: `"${fromName}" <${appUser}>`,
             to: user.email,
             subject: "Verification",
             template: "auth/verificationEmail",
@@ -44,12 +43,11 @@ class MailService {
         return result;
     }
 
-    // Send password change email
     async sendChangePasswordEmail(user) {
-        const { fromAddress, fromName } = mailConfig;
+        const { appUser, fromName } = mailConfig;
 
         const result = await this.send({
-            from: `"${fromName}" <${fromAddress}>`,
+            from: `"${fromName}" <${appUser}>`,
             to: user.email,
             subject: "Thông báo đổi mật khẩu",
             template: "auth/changePassword",

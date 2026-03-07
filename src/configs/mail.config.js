@@ -1,6 +1,6 @@
 const mailConfig = {
     fromName: process.env.MAIL_FROM_NAME,
-    fromAddress: process.env.MAIL_FROM_ADDRESS,
+    appUser: process.env.MAIL_APP_USER,
     appPassword: process.env.MAIL_APP_PASSWORD,
 };
 

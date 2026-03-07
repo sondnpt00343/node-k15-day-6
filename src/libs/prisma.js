@@ -1,6 +1,6 @@
 const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
-const { PrismaClient } = require("../../generated/prisma");
-const dbConfig = require("../configs/db.config");
+const { PrismaClient } = require("@root/generated/prisma");
+const dbConfig = require("@/configs/db.config");
 
 const adapter = new PrismaMariaDb({
     host: dbConfig.host,

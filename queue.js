@@ -1,8 +1,9 @@
+require("module-alias/register");
 require("dotenv").config();
-const jobs = require("./src/jobs");
-const queueService = require("./src/services/queueService");
-const sleep = require("./src/utils/sleep");
-const { jobStatus } = require("./src/configs/constants");
+const jobs = require("@/jobs");
+const queueService = require("@/services/queueService");
+const sleep = require("@/utils/sleep");
+const { jobStatus } = require("@/configs/constants");
 
 (async () => {
     while (true) {

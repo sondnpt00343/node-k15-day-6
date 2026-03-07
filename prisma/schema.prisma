@@ -87,9 +87,64 @@ model User {
   updated_at        DateTime? @default(now()) @db.Timestamp(0)
 
   // has many
-  posts         Post[]
-  refreshTokens RefreshToken[]
-  comments      Comment[]
+  posts             Post[]
+  refreshTokens     RefreshToken[]
+  comments          Comment[]
+  conversationUsers ConversationUser[]
+  messages          Message[]
 
   @@map("users")
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String?
+  description String?   @db.Text
+  content     String?   @db.Text
+  price       Int?
+  quantity    Int?
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+
+  @@map("products")
+}
+
+model Conversation {
+  id                Int                @id @default(autoincrement())
+  name              String?
+  type              String             @default("dm")
+  created_at        DateTime?          @default(now()) @db.Timestamp(0)
+  updated_at        DateTime?          @default(now()) @db.Timestamp(0)
+  conversationUsers ConversationUser[]
+  messages          Message[]
+
+  @@map("conversations")
+}
+
+model ConversationUser {
+  id              Int       @id @default(autoincrement())
+  conversation_id Int
+  user_id         Int
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+  updated_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
+
+  @@map("conversation_user")
+}
+
+model Message {
+  id              Int       @id @default(autoincrement())
+  conversation_id Int
+  user_id         Int
+  type            String    @default("text")
+  content         String    @db.Text
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+  updated_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
+
+  @@map("messages")
 }

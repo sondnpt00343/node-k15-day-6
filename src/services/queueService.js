@@ -1,30 +1,27 @@
-const db = require("../../db");
-const { jobStatus } = require("../configs/constants");
+const prisma = require("@/libs/prisma");
+const { jobStatus } = require("@/configs/constants");
 
 class QueueService {
     async push(type, payload) {
         const jsonPayload = JSON.stringify(payload);
-        await db.query("insert into queues (type, payload) values (?, ?)", [
-            type,
-            jsonPayload,
-        ]);
+        await prisma.queue.create({
+            data: { type, payload: jsonPayload },
+        });
     }
 
     async getPendingJob() {
-        const [rows] = await db.query(
-            "select * from queues where status = ? order by id limit 1",
-            [jobStatus.pending],
-        );
-        const firstJob = rows[0];
-        return firstJob ?? null;
+        const job = await prisma.queue.findFirst({
+            where: { status: jobStatus.pending },
+            orderBy: { id: "asc" },
+        });
+        return job;
     }
 
     async updateStatus(id, status, info) {
-        await db.query("update queues set status = ?, info = ? where id = ?", [
-            status,
-            info,
-            id,
-        ]);
+        await prisma.queue.update({
+            where: { id },
+            data: { status, ...(info != null && { info }) },
+        });
     }
 }
 

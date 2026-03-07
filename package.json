@@ -1,4 +1,8 @@
 {
+    "_moduleAliases": {
+        "@": "src",
+        "@root": "."
+    },
     "scripts": {
         "start": "node server.js",
         "dev": "concurrently 'npm:dev-server' 'npm:queue' 'npm:schedule'",
@@ -16,8 +20,9 @@
         "ejs": "^4.0.1",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",
-        "mysql2": "^3.16.1",
-        "nodemailer": "^7.0.13"
+        "module-alias": "^2.3.4",
+        "nodemailer": "^7.0.13",
+        "pusher": "^5.3.2"
     },
     "devDependencies": {
         "concurrently": "^9.2.1",

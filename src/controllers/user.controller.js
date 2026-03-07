@@ -1,12 +1,13 @@
-const postService = require("../services/post.service");
-const userService = require("../services/user.service");
-const { userTransformer } = require("../transformers");
+const userService = require("@/services/user.service");
 
 const getAll = async (req, res) => {
     const users = await userService.getAll();
-    const response = userTransformer.transform(users);
-
-    res.json(response);
+    res.success(users);
 };
 
-module.exports = { getAll };
+const getDetail = async (req, res) => {
+    const user = await userService.getDetail(req.params.id);
+    res.success(user);
+};
+
+module.exports = { getAll, getDetail };
