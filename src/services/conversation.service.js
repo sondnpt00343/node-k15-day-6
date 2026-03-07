@@ -117,6 +117,11 @@ class ConversationService {
                 type: type || "text",
                 content,
             },
+            include: {
+                user: {
+                    select: { id: true, email: true, name: true },
+                },
+            },
         });
 
         pusher.trigger(`conversation-${conversationId}`, "created", message);
