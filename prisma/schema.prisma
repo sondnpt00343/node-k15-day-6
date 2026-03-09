@@ -92,6 +92,7 @@ model User {
   comments          Comment[]
   conversationUsers ConversationUser[]
   messages          Message[]
+  chatbotMessages   ChatbotMessage[]
 
   @@map("users")
 }
@@ -147,4 +148,17 @@ model Message {
   user         User         @relation(fields: [user_id], references: [id])
 
   @@map("messages")
+}
+
+model ChatbotMessage {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  type       String    @default("text")
+  content    String    @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("chatbot_messages")
 }

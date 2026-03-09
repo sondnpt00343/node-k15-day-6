@@ -30,4 +30,9 @@ module.exports = {
         completed: "completed",
         failed: "failed",
     },
+    chatRole: {
+        user: "user",
+        assistant: "assistant",
+        system: "system",
+    },
 };
