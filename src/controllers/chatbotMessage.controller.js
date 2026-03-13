@@ -14,9 +14,10 @@ const getMessages = async (req, res) => {
 };
 
 const chat = async (req, res) => {
-    const { input } = req.body;
-    const user = req.auth.user;
+    const input = typeof req.body?.input === "string" ? req.body.input.trim() : "";
+    if (!input) return res.error("Invalid input", 400);
 
+    const user = req.auth.user;
     const result = await chatbotMessageService.chat(user, input);
 
     res.success({

@@ -1,4 +1,4 @@
-const mailService = require("@/services/mailService");
+const mailService = require("@/services/mail.service");
 
 async function sendChangePasswordEmail(payload) {
     await mailService.sendChangePasswordEmail(payload);

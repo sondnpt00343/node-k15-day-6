@@ -1,5 +1,5 @@
 const prisma = require("@/libs/prisma");
-const authService = require("@/services/authService");
+const authService = require("@/services/auth.service");
 const { authError, http } = require("@/configs/constants");
 
 async function authRequired(req, res, next) {

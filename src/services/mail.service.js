@@ -3,7 +3,7 @@ const path = require("node:path");
 
 const mailConfig = require("@/configs/mail.config");
 const { transporter } = require("@/libs/nodemailer");
-const authService = require("@/services/authService");
+const authService = require("@/services/auth.service");
 
 class MailService {
     getTemplatePath(template) {

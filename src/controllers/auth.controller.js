@@ -1,5 +1,5 @@
-const authService = require("@/services/authService");
-const queueService = require("@/services/queueService");
+const authService = require("@/services/auth.service");
+const queueService = require("@/services/queue.service");
 const { authError, http } = require("@/configs/constants");
 
 function getAuthErrorStatus(errorCode) {

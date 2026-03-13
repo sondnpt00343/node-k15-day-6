@@ -6,7 +6,7 @@ const { authError } = require("@/configs/constants");
 const randomString = require("@/utils/randomString");
 const appConfig = require("@/configs/app.config");
 const prisma = require("@/libs/prisma");
-const queueService = require("@/services/queueService");
+const queueService = require("@/services/queue.service");
 
 class AuthService {
     async signAccessToken(user) {
